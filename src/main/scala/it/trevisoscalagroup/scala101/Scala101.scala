@@ -1,5 +1,7 @@
 package it.trevisoscalagroup.scala101
 
+import scala.util.Random
+
 
 object MutablePizza {
 
@@ -213,8 +215,8 @@ object MoreOnTraits {
 }
 
 object WontCompile {
+/*
 
-  /*
   abstract class Worker(val name: String){
     def greet : String // this is abstract
   }
@@ -225,14 +227,14 @@ object WontCompile {
     def greet = "Hello"
   }
 
-  trait Waiter {
+  trait Waiter extends Worker{
     def greet = "How can I serve you?"
   }
 
   class Handyman(override val name: String, val wage: Int) extends Worker(name) with  Waiter with PizzaMaker
-  */
 
 
+*/
 }
 
 object PatternMatching {
@@ -255,7 +257,7 @@ object PatternMatching {
 
   object Pino {
 
-    def commentPizza(pizza: Pizza) =
+    def comment(pizza: Pizza) =
       pizza match {
         case Pizza(tomato, cheese, ham, size) if size == "HUGE" => "Wow!"
         case Pizza(false, cheese, ham, size) =>
@@ -279,10 +281,11 @@ object PatternMatching {
 
     val noTomato: (Pizza => Boolean) = (p => p.tomato == false)
 
+
     order
       .filter(noTomato)
       .filter(p => p.ham == true)
-      .map(pizza => Pino.commentPizza(pizza))
+      .map(pizza => Pino.comment(pizza))
       .map(println)
 
 
@@ -320,5 +323,180 @@ object OperatorsAsMethods {
     println(pizza / 4)
   }
 }
+
+
+object Implicits {
+
+  case class Pizza(val tomato: Boolean = true,
+                   val cheese: Boolean = true,
+                   val ham: Boolean = true,
+                   val size: String = "NORMAL") {
+
+    def slice(numberOfPieces: Int): Unit = {
+      println(s"Pizza is in ${numberOfPieces} pieces")
+    }
+
+  }
+
+
+  object Margherita extends Pizza(true, false, false, "NORMAL") {
+    override def toString = "Pizza Margherita"
+  }
+
+  class MargheritaList(val n: Int) {
+
+    def margheritas: List[Pizza] = {
+      var list: List[Pizza] = List()
+      for (i <- 1 to n)
+        list = list :+ Margherita
+      list
+    }
+
+  }
+
+  val order1 = new MargheritaList(4).margheritas
+
+  import scala.language.implicitConversions
+  import scala.language.postfixOps
+
+  implicit def fromIntToMargherita(n: Int) = new MargheritaList(n)
+
+  val order2 = 4.margheritas
+
+  val order3 = 4 margheritas
+
+}
+
+object ForComprehension {
+
+  case class Pizza(val tomato: Boolean = true,
+                   val cheese: Boolean = true,
+                   val ham: Boolean = true,
+                   val size: String = "NORMAL") {
+
+    def slice(n: Int): List[Slice] = List.fill(n)(Slice(this, n))
+
+
+  }
+
+  case class Slice(val p: Pizza, val fractions: Int) {
+    override def toString = s"1/$fractions of $p"
+  }
+
+
+  def runExample = {
+    val order = List(Pizza(), Pizza(ham = false))
+
+    val l1: List[List[Slice]] = order.map(p => p.slice(4))
+    val l2: List[Slice] = order.flatMap(p => p.slice(4))
+
+
+    val l3: List[String] = order.flatMap(p => p.slice(4)).map(slice => slice.toString)
+
+    val l4: List[String] = for {
+      pizza: Pizza <- order
+      slice: Slice <- pizza.slice(4)
+    } yield slice.toString
+
+    l4
+
+  }
+
+}
+
+object Options {
+
+  case class Pizza(tomato: Boolean = true,
+                   cheese: Boolean = true,
+                   ham: Boolean = true,
+                   size: String = "NORMAL") {
+
+  }
+
+  object TheLazyPizzaMaker {
+    def prepare(p: Pizza): Option[Pizza] =
+      if (Random.nextInt(6) == 0) None
+      else Some(p)
+  }
+
+  object Margherita extends Pizza(true, false, false, "NORMAL") {
+    override def toString = "Pizza Margherita"
+  }
+
+  def runExample = {
+
+
+    val option = TheLazyPizzaMaker.prepare(Margherita)
+
+    option match {
+      case Some(p) => "My pizza is ready"
+      case None => "Fire that pizza maker!"
+    }
+
+
+    option.map(o => "My pizza is ready").getOrElse("Fire that pizza maker!")
+  }
+
+
+}
+
+object NoImplicitParameter {
+
+  case class Pizza(tomato: Boolean = true,
+                   cheese: Boolean = true,
+                   ham: Boolean = true,
+                   size: String = "NORMAL") {
+
+  }
+
+  object Pasquale {
+    def prepare(p: Pizza) = s"I prepare you pizza $p"
+    def receiveOrder(p: Pizza) = s"You ordered me $p"
+    def serve(p: Pizza) = s"Here is your pizza $p"
+    def receivePayment(p: Pizza, tip: Int) = s"Thanks for paying $p and for the $tip $$"
+  }
+
+  def runExample = {
+    val p = new Pizza(tomato = false)
+    Pasquale.receiveOrder(p)
+    Pasquale.prepare(p)
+    Pasquale.serve(p)
+    Pasquale.receivePayment(p, 3)
+  }
+
+
+}
+
+object ImplicitParameter {
+
+  case class Pizza(tomato: Boolean = true,
+                   cheese: Boolean = true,
+                   ham: Boolean = true,
+                   size: String = "NORMAL") {
+
+  }
+
+  object Pasquale {
+
+    def prepare(implicit p: Pizza) = s"I prepare you pizza $p"
+    def receiveOrder(implicit p: Pizza) = s"You ordered me $p"
+    def serve(implicit p: Pizza) = s"Here is your pizza $p"
+    def receivePayment(tip: Int)(implicit p: Pizza) = s"Thanks for paying $p and for the $tip $$ "
+
+  }
+
+  def runExample = {
+
+    implicit val p = new Pizza(tomato = false)
+
+    Pasquale.receiveOrder
+    Pasquale.prepare
+    Pasquale.serve
+    Pasquale.receivePayment(tip = 3)
+  }
+
+
+}
+
 
 
