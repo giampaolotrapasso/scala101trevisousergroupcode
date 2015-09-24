@@ -345,7 +345,7 @@ object Implicits {
 
   class MargheritaList(val n: Int) {
 
-    def margheritas: List[Pizza] = {
+    def margherita: List[Pizza] = {
       var list: List[Pizza] = List()
       for (i <- 1 to n)
         list = list :+ Margherita
@@ -354,16 +354,19 @@ object Implicits {
 
   }
 
-  val order1 = new MargheritaList(4).margheritas
+  val order1 = new MargheritaList(4).margherita
 
   import scala.language.implicitConversions
   import scala.language.postfixOps
 
   implicit def fromIntToMargherita(n: Int) = new MargheritaList(n)
 
-  val order2 = 4.margheritas
+  val order2: List[Pizza] = 4.margherita
 
-  val order3 = 4 margheritas
+  val order3 : List[Pizza] = 4 margherita
+
+  val p: Pizza = order3 head
+
 
 }
 
